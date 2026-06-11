@@ -129,7 +129,7 @@ The `prebuild` script auto-generates `public/firebase-config.js` from `client/.e
 
 - **Gmail OAuth 2.0** with read-only scope
 - **Category filtering** — skips Promotions/Social, processes Primary & Updates
-- **Gemini 1.5 Flash** summarization with 4.5s rate-limit delay (15 RPM free tier)
+- **Gemini 3.5 Flash** summarization with 4.5s rate-limit delay (15 RPM free tier)
 - **Urgency scoring** 1–10 with instant FCM push for scores ≥ 8
 - **Daily digest dashboard** with date picker and metrics
 - **Graceful error handling** — single email failures don't halt the pipeline
