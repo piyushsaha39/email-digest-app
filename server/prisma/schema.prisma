@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                 String         @id @default(uuid())
+  email              String         @unique
+  name               String?
+  googleRefreshToken String
+  fcmToken           String?
+  createdAt          DateTime       @default(now())
+  summaries          EmailSummary[]
+  digestLogs         DigestLog[]
+}
+
+model EmailSummary {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gmailMessageId   String   @unique
+  senderName       String
+  senderEmail      String
+  subject          String
+  receivedAt       DateTime
+  rawSnippet       String
+  aiSummary        String
+  urgencyScore     Int
+  urgencyReason    String
+  isRead           Boolean  @default(false)
+  notificationSent Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model DigestLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  digestDate  DateTime @default(now())
+  totalEmails Int
+  urgentCount Int
+  createdAt   DateTime @default(now())
+}
