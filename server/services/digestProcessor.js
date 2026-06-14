@@ -1,7 +1,8 @@
 import prisma from '../lib/prisma.js';
 import { formatDisplayDate } from '../lib/utils.js';
 import { fetchEmails } from './gmail.js';
-import { summarizeEmail } from './gemini.js';
+// Swapped Gemini for Mistral
+import { analyzeEmailWithMistral } from './mistral.js'; 
 import { sendUrgentNotification } from './fcm.js';
 
 // Helper utility for safety pauses
@@ -47,12 +48,10 @@ export async function processUserDigest(userId, targetDate = null) {
         continue;
       }
 
-      const aiResult = await summarizeEmail(
-        email.senderName,
-        email.senderEmail,
-        email.subject,
-        email.bodyRaw
-      );
+      // Format the email data into a single text block for Mistral to analyze
+      const emailContext = `From: ${email.senderName} <${email.senderEmail}>\nSubject: ${email.subject}\nBody:\n${email.bodyRaw}`;
+      
+      const aiResult = await analyzeEmailWithMistral(emailContext);
       
       const summary = await prisma.emailSummary.create({
         data: {
@@ -65,7 +64,8 @@ export async function processUserDigest(userId, targetDate = null) {
           rawSnippet: email.rawSnippet,
           aiSummary: aiResult.summary,
           urgencyScore: aiResult.urgencyScore,
-          urgencyReason: aiResult.urgencyReason,
+          // Fallback: Use the summary as the urgency reason if Mistral didn't return one
+          urgencyReason: aiResult.urgencyReason || aiResult.summary, 
         },
       });
 
@@ -74,7 +74,7 @@ export async function processUserDigest(userId, targetDate = null) {
       if (aiResult.urgencyScore >= 8 && user.fcmToken) {
         const sent = await sendUrgentNotification(user.fcmToken, {
           senderName: email.senderName,
-          urgencyReason: aiResult.urgencyReason,
+          urgencyReason: aiResult.urgencyReason || aiResult.summary,
           emailId: summary.id,
           subject: email.subject,
         });
